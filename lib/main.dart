@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:take_a_photo_sample/image_path_list.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -9,7 +11,7 @@ Future<void> main() async {
 
   final firstCamera = cameras.first;
 
-  runApp(MyApp(camera: firstCamera));
+  runApp(ProviderScope(child: MyApp(camera: firstCamera)));
 }
 
 class MyApp extends StatelessWidget {
@@ -24,19 +26,63 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: TakePictureScreen(
-        title: 'Flutter Demo Home Page',
+      home: DisplayImagesList(
         camera: camera,
       ),
     );
   }
 }
 
-class TakePictureScreen extends StatefulWidget {
-  const TakePictureScreen({Key? key, required this.title, required this.camera})
-      : super(key: key);
+class DisplayImagesList extends ConsumerStatefulWidget {
+  DisplayImagesList({Key? key, required this.camera}) : super(key: key);
+  final CameraDescription camera;
 
-  final String title;
+  @override
+  ConsumerState<DisplayImagesList> createState() => _DisplayImagesListState();
+}
+
+class _DisplayImagesListState extends ConsumerState<DisplayImagesList> {
+  //final List _imagePathList = [];
+
+  @override
+  Widget build(BuildContext context) {
+    final imagePathList = ref.watch(imagePathListProvider);
+    return Scaffold(
+      body: ListView.builder(
+        itemCount: imagePathList.length,
+        itemBuilder: (BuildContext context, int index) {
+          return Column(
+            children: [
+              SizedBox(
+                height: 100,
+                child: Image.file(File(imagePathList[index])),
+              ),
+              const Divider(),
+            ],
+          );
+        },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          var result = await Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => TakePictureScreen(camera: widget.camera),
+            ),
+          );
+
+          setState(() {
+            ref.read(imagePathListProvider).add(result);
+          });
+        },
+        child: const Icon(Icons.add_a_photo),
+      ),
+    );
+  }
+}
+
+class TakePictureScreen extends StatefulWidget {
+  const TakePictureScreen({Key? key, required this.camera}) : super(key: key);
+
   final CameraDescription camera;
 
   @override
@@ -69,9 +115,6 @@ class _TakePictureScreenState extends State<TakePictureScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
-      ),
       body: Center(
         child: FutureBuilder(
           future: _initializeControllerFuture,
@@ -95,9 +138,7 @@ class _TakePictureScreenState extends State<TakePictureScreen> {
 
             if (!mounted) return;
 
-            await Navigator.of(context).push(MaterialPageRoute(
-                builder: (context) =>
-                    DisplayPictureScreen(imagePath: image.path)));
+            Navigator.of(context).pop(image.path);
           } catch (e) {
             print(e);
           }
@@ -105,23 +146,6 @@ class _TakePictureScreenState extends State<TakePictureScreen> {
         tooltip: 'take a photo',
         child: const Icon(Icons.photo_camera),
       ),
-    );
-  }
-}
-
-class DisplayPictureScreen extends StatelessWidget {
-  const DisplayPictureScreen({Key? key, required this.imagePath})
-      : super(key: key);
-
-  final String imagePath;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Display the Picture"),
-      ),
-      body: Image.file(File(imagePath)),
     );
   }
 }
