@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:camera/camera.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:take_a_photo_sample/image_path_list.dart';
@@ -114,37 +115,41 @@ class _TakePictureScreenState extends State<TakePictureScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: FutureBuilder(
-          future: _initializeControllerFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.done) {
-              return CameraPreview(_cameraController);
-            } else {
-              return const Center(
-                child: CircularProgressIndicator(),
-              );
+    return MaterialApp(
+      home: Scaffold(
+        body: Center(
+          child: FutureBuilder(
+            future: _initializeControllerFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.done) {
+                return CameraPreview(_cameraController);
+              } else {
+                return const Center(
+                  child: CircularProgressIndicator(),
+                );
+              }
+            },
+          ),
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () async {
+            try {
+              await _initializeControllerFuture;
+
+              final image = await _cameraController.takePicture();
+
+              if (!mounted) return;
+
+              Navigator.of(context).pop(image.path);
+            } catch (e) {
+              if (kDebugMode) {
+                print(e);
+              }
             }
           },
+          tooltip: 'take a photo',
+          child: const Icon(Icons.photo_camera),
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          try {
-            await _initializeControllerFuture;
-
-            final image = await _cameraController.takePicture();
-
-            if (!mounted) return;
-
-            Navigator.of(context).pop(image.path);
-          } catch (e) {
-            print(e);
-          }
-        },
-        tooltip: 'take a photo',
-        child: const Icon(Icons.photo_camera),
       ),
     );
   }
