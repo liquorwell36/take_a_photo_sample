@@ -43,7 +43,7 @@ void main() async {
         ),
       );
 
-      expect(find.byIcon(Icons.photo_camera), findsOneWidget);
+      expect(find.byIcon(Icons.camera), findsOneWidget);
     },
   );
 }

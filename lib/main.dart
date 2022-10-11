@@ -43,8 +43,6 @@ class DisplayImagesList extends ConsumerStatefulWidget {
 }
 
 class _DisplayImagesListState extends ConsumerState<DisplayImagesList> {
-  //final List _imagePathList = [];
-
   @override
   Widget build(BuildContext context) {
     final imagePathList = ref.watch(imagePathListProvider);
@@ -72,6 +70,7 @@ class _DisplayImagesListState extends ConsumerState<DisplayImagesList> {
           );
 
           setState(() {
+            if (result == null) return;
             ref.read(imagePathListProvider).add(result);
           });
         },
@@ -117,7 +116,14 @@ class _TakePictureScreenState extends State<TakePictureScreen> {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
-        body: Center(
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ),
+        body: SizedBox(
+          height: MediaQuery.of(context).size.height,
           child: FutureBuilder(
             future: _initializeControllerFuture,
             builder: (context, snapshot) {
@@ -131,24 +137,28 @@ class _TakePictureScreenState extends State<TakePictureScreen> {
             },
           ),
         ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () async {
-            try {
-              await _initializeControllerFuture;
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+        floatingActionButton: Container(
+          margin: const EdgeInsets.only(bottom: 26.0),
+          child: FloatingActionButton(
+            onPressed: () async {
+              try {
+                await _initializeControllerFuture;
 
-              final image = await _cameraController.takePicture();
+                final image = await _cameraController.takePicture();
 
-              if (!mounted) return;
+                if (!mounted) return;
 
-              Navigator.of(context).pop(image.path);
-            } catch (e) {
-              if (kDebugMode) {
-                print(e);
+                Navigator.of(context).pop(image.path);
+              } catch (e) {
+                if (kDebugMode) {
+                  print(e);
+                }
               }
-            }
-          },
-          tooltip: 'take a photo',
-          child: const Icon(Icons.photo_camera),
+            },
+            tooltip: 'take a photo',
+            child: const Icon(Icons.camera),
+          ),
         ),
       ),
     );
